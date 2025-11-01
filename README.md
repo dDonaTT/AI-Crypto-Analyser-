@@ -1,2 +1,2 @@
 # AI-Crypto-Analyser-
-I will develop a practical prototype that demonstrates the use of Artificial Intelligence for analyzing cryptocurrency transactions and identifying anomalies.
+This project is developed as part of my bachelor’s degree thesis in Computer Science and Engineering. The main goal of the project is to demonstrate how Artificial Intelligence (AI) can be used to analyze cryptocurrency transactions and detect anomalies in order to improve the security and transparency of blockchain-based systems.
