@@ -1,3 +1,8 @@
-from django.shortcuts import render
+# api/views.py
+from rest_framework import generics
+from .models import Crypto
+from .serializers import CryptoSerializer
 
-# Create your views here.
+class CryptoListView(generics.ListCreateAPIView):
+    queryset = Crypto.objects.all()
+    serializer_class = CryptoSerializer
