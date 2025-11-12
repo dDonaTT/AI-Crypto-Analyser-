@@ -8,12 +8,22 @@ class CryptoListView(generics.ListCreateAPIView):
     queryset = Crypto.objects.all()
     serializer_class = CryptoSerializer
     permission_classes = [permissions.AllowAny]
+class CryptoDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Crypto.objects.all()
+    serializer_class = CryptoSerializer
 
 class UserProfileListView(generics.ListCreateAPIView):
     queryset = UserProfile.objects.all()
     serializer_class = UserProfileSerializer
     permissions_classes = [permissions.AllowAny]
+class UserProfileDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = UserProfile.objects.all()
+    serializer_class = UserProfileSerializer
+
 class TransactionListView(generics.ListCreateAPIView):
     queryset = Transaction.objects.all()
     serializer_class = TransactionSerializer
     permissions_classes = [permissions.AllowAny]
+class TransactionDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Transaction.objects.all()
+    serializer_class = TransactionSerializer
