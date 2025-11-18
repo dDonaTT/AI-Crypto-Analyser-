@@ -5,8 +5,8 @@ from django.contrib.auth.models import User
 class Crypto(models.Model):
     name = models.CharField(max_length=50)
     symbol = models.CharField(max_length=10 ,unique=True)
-    price = models.DecimalField(max_digits=20, decimal_places=8)
-    market_cap = models.DecimalField(max_digits=20, decimal_places=4)
+    price = models.DecimalField(max_digits=20, decimal_places=8, default=0.0)
+    market_cap = models.DecimalField(max_digits=20, decimal_places=4,default=0.0)
     volume_24h = models.DecimalField(max_digits=20, decimal_places=2,default=0.0)
     change_24h = models.DecimalField(max_digits=20, decimal_places=2, default=0.0)
     last_updated = models.DateTimeField(auto_now=True)
@@ -37,9 +37,10 @@ class UserProfile(models.Model):
 class Transaction(models.Model):
     crypto = models.ForeignKey(Crypto, on_delete=models.CASCADE, related_name='transactions')
     hash = models.CharField(max_length=100, unique=True)
+    chain = models.CharField(max_length=10, default="BTC")
     amount = models.DecimalField(max_digits=20, decimal_places=8)
     sender = models.CharField(max_length=100)
-    reciever = models.CharField(max_length=100)
+    receiver  = models.CharField(max_length=100)
     timestamp = models.DateTimeField()
 
     class Meta:

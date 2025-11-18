@@ -6,6 +6,7 @@ from .views import (
     TransactionDetailView,
     UserProfileListView,
     UserProfileDetailView,
+    FetchMixedTransactions
 )
 from .views_auth import RegisterView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
@@ -19,6 +20,7 @@ urlpatterns = [
         TransactionDetailView.as_view(),
         name="transaction-detail",
     ),
+    path("transactions/fetch-mixed/", FetchMixedTransactions.as_view(), name="fetch_mixed"),
     path("profiles/", UserProfileListView.as_view(), name="profile-list"),
     path("auth/register", RegisterView.as_view(), name="register"),
     path("auth/login", TokenObtainPairView.as_view(), name="token_obtain_pair"),
