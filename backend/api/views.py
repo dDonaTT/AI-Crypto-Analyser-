@@ -1,13 +1,14 @@
 # api/views.py
 import requests
-from rest_framework import generics, permissions, status
+from rest_framework import generics, permissions, status, filters
 from .models import Crypto, Transaction, UserProfile
 from .serializers import CryptoSerializer, TransactionSerializer, UserProfileSerializer
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from datetime import datetime
 from django.utils import timezone
-
+from django_filters.rest_framework import DjangoFilterBackend
+from django.db.models import Sum, Max, Avg
 
 
 class CryptoListView(generics.ListCreateAPIView):
@@ -37,10 +38,76 @@ class TransactionListView(generics.ListCreateAPIView):
     serializer_class = TransactionSerializer
     permissions_classes = [permissions.AllowAny]
 
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.SearchFilter,
+        filters.OrderingFilter,
+    ]
+    filter_fields = {
+        "chain": ["exact"],
+        "amount": ["gte", "lte"],
+        "timestamp": ["gte", "lte"],
+    }
+    search_fields = ["sender", "receiver", "hash"]
+    ordering_fields = ["-timestamp"]
+
 
 class TransactionDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Transaction.objects.all()
     serializer_class = TransactionSerializer
+
+
+class TransactionAnalyticsView(APIView):
+    def get(self, request):
+        try:
+            total_amount = (
+                Transaction.objects.aggregate(total=Sum("amount"))["total"] or 0
+            )
+
+            btc_qs = Transaction.objects.filter(crypto__symbol="BTC")
+            eth_qs = Transaction.objects.filter(crypto__symbol="ETH")
+
+            total_btc_amount = btc_qs.aggregate(total=Sum("amount"))["total"] or 0
+            total_eth_amount = eth_qs.aggregate(total=Sum("amount"))["total"] or 0
+
+            largest_transaction = (
+                Transaction.objects.order_by("-amount")
+                .values("hash", "amount", "chain", "sender", "receiver", "timestamp")
+                .first()
+                or {}
+            )
+
+            average_amount = (
+                Transaction.objects.aggregate(avg=Avg("amount"))["avg"] or 0
+            )
+
+            latest_10_transactions = list(
+                Transaction.objects.order_by("-timestamp").values(
+                    "hash", "amount", "chain", "sender", "receiver", "timestamp"
+                )[:10]
+            )
+
+            data = {
+                "summary": {
+                    "total_amount": total_amount,
+                    "btc_count": btc_qs.count(),
+                    "eth_count": eth_qs.count(),
+                },
+                "totals": {
+                    "total_btc_amount": total_btc_amount,
+                    "total_eth_amount": total_eth_amount,
+                },
+                "largest_transaction": largest_transaction,
+                "averages": {
+                    "average_amount": average_amount,
+                },
+                "latest_10_transactions": latest_10_transactions,
+            }
+
+            return Response(data, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
 
 
 class FetchMixedTransactions(APIView):
@@ -76,10 +143,14 @@ class FetchMixedTransactions(APIView):
             eth_blocks = [1000000, 1100000, 1200000, 1300000, 1400000]
             eth_data = []
             for block_num in eth_blocks:
-                block = requests.get(f"https://api.blockcypher.com/v1/eth/main/blocks/{block_num}").json()
+                block = requests.get(
+                    f"https://api.blockcypher.com/v1/eth/main/blocks/{block_num}"
+                ).json()
                 if block.get("txids"):
                     tx_hash = block["txids"][0]
-                    tx = requests.get(f"https://api.blockcypher.com/v1/eth/main/txs/{tx_hash}").json()
+                    tx = requests.get(
+                        f"https://api.blockcypher.com/v1/eth/main/txs/{tx_hash}"
+                    ).json()
                     eth_data.append(tx)
 
             all_saved = []
@@ -150,5 +221,3 @@ class FetchMixedTransactions(APIView):
 
         except Exception as e:
             return Response({"error": str(e)}, status=500)
-
-    

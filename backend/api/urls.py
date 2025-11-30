@@ -4,6 +4,7 @@ from .views import (
     CryptoDetailView,
     TransactionListView,
     TransactionDetailView,
+    TransactionAnalyticsView,
     UserProfileListView,
     UserProfileDetailView,
     FetchMixedTransactions
@@ -21,6 +22,8 @@ urlpatterns = [
         name="transaction-detail",
     ),
     path("transactions/fetch-mixed/", FetchMixedTransactions.as_view(), name="fetch_mixed"),
+    path("transactions/analytics/", TransactionAnalyticsView.as_view(), name="transaction-analytics"),
+
     path("profiles/", UserProfileListView.as_view(), name="profile-list"),
     path("auth/register", RegisterView.as_view(), name="register"),
     path("auth/login", TokenObtainPairView.as_view(), name="token_obtain_pair"),
