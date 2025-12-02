@@ -5,10 +5,11 @@ from .models import Crypto, Transaction, UserProfile
 from .serializers import CryptoSerializer, TransactionSerializer, UserProfileSerializer
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from datetime import datetime
+from datetime import datetime, timedelta
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Sum, Max, Avg
+from .ai_module import detect_anomaly
 
 
 class CryptoListView(generics.ListCreateAPIView):
@@ -20,6 +21,43 @@ class CryptoListView(generics.ListCreateAPIView):
 class CryptoDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Crypto.objects.all()
     serializer_class = CryptoSerializer
+class CryptoTrendView(APIView):
+    def get(self, request):
+        try:
+            cryptos = ["bitcoin", "ethereum"]
+            trend_data = {}
+            
+            for crypto in cryptos:
+                url = f"https://api.coingecko.com/api/v3/coins/{crypto}/market_chart"
+                params = {
+                    "vs_currency": "usd",
+                    "days": 7
+                }
+                resp = requests.get(url, params=params).json()
+                prices = [price[1] for price in resp.get("prices", [])]
+                if not prices:
+                    trend_data[crypto] = "No data"
+                    continue
+                start_price = prices[0]
+                end_price = prices[-1]
+                change_percent = ((end_price - start_price) / start_price) * 100
+
+                if change_percent > 1.5:
+                    trend= "Bullish"
+                elif change_percent < 1.5:
+                    trend = "Bearish"
+                else:
+                    trend = "Neutral"
+                trend_data[crypto] = {
+                    "start_price": start_price,
+                    "end_price": end_price,
+                    "change_percent": round(change_percent,2),
+                    "trend": trend
+                }
+            return Response(trend_data, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class UserProfileListView(generics.ListCreateAPIView):
@@ -50,6 +88,17 @@ class TransactionListView(generics.ListCreateAPIView):
     }
     search_fields = ["sender", "receiver", "hash"]
     ordering_fields = ["-timestamp"]
+    def perform_create(self, serializer):
+        transaction = serializer.save()
+        tx_dict = {
+            "amount": float(transaction.amount),
+            "timestamp": transaction.timestamp,
+        }
+        result = detect_anomaly(tx_dict)
+        if result["is_anomaly"]:
+            transaction.is_anomaly = True
+            transaction.risk_score = result["risk_score"]
+            transaction.save()       
 
 
 class TransactionDetailView(generics.RetrieveUpdateDestroyAPIView):

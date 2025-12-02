@@ -41,6 +41,8 @@ class Transaction(models.Model):
     amount = models.DecimalField(max_digits=20, decimal_places=8)
     sender = models.CharField(max_length=100)
     receiver  = models.CharField(max_length=100)
+    is_anomaly = models.BooleanField(default=False)
+    risk_score = models.FloatField(default=0.0)
     timestamp = models.DateTimeField()
 
     class Meta:
