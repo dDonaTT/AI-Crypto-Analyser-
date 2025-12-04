@@ -1,0 +1,14 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-primary: #1a56db;
+  --color-secondary: #7e22ce;
+  
+  --font-family-sans: 'Inter', system-ui, sans-serif;
+  
+
+}
+
+.custom-card {
+  backdrop-filter: blur(10px);
+}
